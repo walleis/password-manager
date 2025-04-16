@@ -45,7 +45,7 @@ Py-ssword is a simple and intuitive application developed in Python using the Tk
     pip install pyperclip
     ```
 3.  Save the provided Python code in a file named `py_ssword.py` (or any other name you prefer).
-4.  Run the `py_ssword.py` script.
+4.  Run the `password_manager.py` script.
 
 ## File Structure
 
