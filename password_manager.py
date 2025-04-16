@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import messagebox
 import pyperclip
 import random
+import json
 
 def random_password_generator():
     '''Function responsible for generating random passwords and copying to the clipboard.'''
@@ -47,6 +48,12 @@ def save_password():
     website = website_entry.get()
     email = email_entry.get()
     password = password_entry.get()
+    new_data = {
+        website: {
+            "email": email,
+            "password": password,
+        }
+    }
 
     # Detect empty fields and wrong emails.
     if website == "" or email == "" or password == "":
@@ -54,19 +61,49 @@ def save_password():
     elif ".com" not in email or "@" not in email:
         messagebox.showerror(title="Invalid email", message="Your email must contain '@' and '.com'.")
     else:
-        # Append the passwords to a .txt file.
-        with open(f"./passwords.txt", mode="a") as passwords:
-            passwords.write(f"Website: {website} | Email: {email} | Password: {password}\n")
-
-        # Clear the values from the entries.
-        website_entry.delete(0, END)
-        email_entry.delete(0, END)
-        password_entry.delete(0, END)
+        try:
+            # Try to open and read the passwords from passwords.json
+            with open("./passwords.json", mode="r") as data_file:
+                data = json.load(data_file) # Read the existing data
+        except (FileNotFoundError, json.JSONDecodeError):
+            # If file doesn't exist or is empty/invalid, start with an empty dictionary
+            with open("./passwords.json", mode="w") as data_file:
+                json.dump(new_data, data_file, indent=4)
+        else:
+            # Update the data with the new entry
+            data.update(new_data)
+            # Write the updated data back to the file
+            with open("./passwords.json", mode="w") as data_file:
+                json.dump(data, data_file, indent=4) # Save updated data
+        finally:
+            # Clear the values from the entries.
+            website_entry.delete(0, END)
+            email_entry.delete(0, END)
+            password_entry.delete(0, END)
 
         # Visual information to the user, so they know if the password got saved.
         password_has_been_saved = Label(text="The password has been saved.")
         password_has_been_saved.grid(column=1, row=5)
 
+def find_password():
+    '''Function responsible for finding an existing password.'''
+
+    # Store the inputs.
+    website = website_entry.get()
+    try:
+        with open("./passwords.json", mode="r") as data_file:
+            data = json.load(data_file)  # Read the existing data
+            if website in data:
+                email = data[website]["email"]
+                password = data[website]["password"]
+                messagebox.showinfo(title="Password found!", message=f"{website}\nEmail: {email}\nPassword: {password}")
+            else:
+                messagebox.showinfo(title="Error", message=f"No details for {website} found.")
+
+    except FileNotFoundError:
+        messagebox.showerror(title="Error", message=f"No password file found.")
+    except json.JSONDecodeError:
+        messagebox.showerror(title="Error", message="Error reading password file.")
 
 # Window features.
 window = Tk()
@@ -107,8 +144,11 @@ user_password = password_entry.get()
 generate_password_button = Button(text="Generate Password", command=random_password_generator)
 generate_password_button.grid(column=1, row=3, sticky="e")
 
-add_button = Button(text="Add", width=29, command=save_password)
+search_button = Button(text="           Search           ", command=find_password)
+search_button.grid(column=1, row=1, sticky="e")
+
+add_button = Button(text="Add", width=29, command=find_password)
 add_button.grid(column=1, row=4, columnspan=2)
 
-
+# Keeps the window open.
 window.mainloop()
